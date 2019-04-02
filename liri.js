@@ -4,6 +4,9 @@ require("dotenv").config();
 const Spotify = require('node-spotify-api');
 const keys = require("./keys.js");
 const spotify = new Spotify(keys.spotify);
+var axios = require("axios");
+var moment = require("moment");
+
 
 console.log("Welcome to Liri");
 
@@ -19,6 +22,7 @@ function showSong() {
 
 
     if (command === "spotify-this-song") {
+
         console.log("getting the details of your song, interesting choice");
 
         spotify.search({ type: "track", query: songChoice }, function (err, data) {
@@ -51,33 +55,71 @@ function showSong() {
 }
 showSong();
 
+
 function concert() {
-    if (command === "concert-this") {
-        console.log("okay, we all have unique taste. Not judging just getting your results ........\n");
-        var request = require('request');
-        request.get("https://rest.bandsintown.com/artists/" + userInput + "/events?app_id=codingbootcamp", function (error, response) {
-            console.log('error:', error); // Print the error if one occurred
-            console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-            console.log(response);
-            
-        });
+    let artist = userInput;
+    console.log(artist);
+    var queryURL = "https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp";
+    axios.get(queryURL).then(
+        function (response) {
+            var jsonData = response.data;
+            if (command === "concert-this") {
+                var logData = [];
+                logData.push("Here are the upcoming Concerts for " + artist);
+                for (var i = 0; jsonData.length; i++) {
+                    var show = jsonData[i];
+                    logData.push(
+                        show.venue.city +
+                        "," +
+                        (show.venue.region || show.venue.country) +
+                        " at " +
+                        show.venue.name +
+                        " " +
+                        moment(show.datetime).format("MM/DD/YYYY")
+                    );
+                    console.log(logData.join("\n"));
+                    printInfo(logData.join("\n"));
+
+                }
+            } else if (!data) {
+                console.log("sorry fam can't find anything for " + artist);
+            }
+        }
+    
+    )}
+
+    concert();
+
+    function movie() {
+        let movie = userInput;
+        movieURL = "http://www.omdbapi.com/?t=" + movie + "&y=&plot=full&tomatoes=true&apikey=66c1094e"
+        if (command === "movie-this") {
+            axios.get(movieURL).then(function (response) {
+                var jsonData = response.data;
+                console.log("Title: " + jsonData.Title);
+                console.log("Year: " + jsonData.Year);
+                console.log("Rated: " + jsonData.Rated);
+                console.log("IMDB Rating: " + jsonData.imdbRating);
+                console.log("Country: " + jsonData.Country);
+                console.log("Language: " + jsonData.Language);
+                console.log("Plot: " + jsonData.Plot);
+                console.log("Actors: " + jsonData.Actors);
+                console.log("Rotten Tomatoes Rating: " + jsonData.Ratings[1].Value);
+            });
+
+        }
     }
+    movie();
 
-}
+    function printInfo() {
+        if (command === "do-what--it-says") {
+            fs.appendFile("log.txt", JSON.stringify(data) + "\n", function (err) {
+                if (err) {
+                    return console.log(err);
+                }
 
-
-concert();
-
-function movie() {
-    if (command === "movie-this") {
-        console.log("Searcing  for your movie");
+                console.log("log.txt was updated!");
+            });
+        }
     }
-}
-movie();
-
-function printInfo (){
-    if (command === "do-what--it-says"){
-        console.log("this will read I want it that way but it won't right now");
-    }
-}
-printInfo();
+    printInfo();
